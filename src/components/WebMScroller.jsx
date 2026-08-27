@@ -2,6 +2,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MousePointer, Layers } from 'lucide-react';
 import { soundEngine } from '../utils/audio';
 
+// Global in-memory image cache for 3D frames across view transitions
+const globalFrameCache = {};
+
 export default function WebMScroller({
   productId,
   videoUrl,
@@ -21,16 +24,25 @@ export default function WebMScroller({
   const [dragStartFrame, setDragStartFrame] = useState(0);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
 
-  // Pre-load all 240 high-res image frames into memory
+  // Pre-load all 240 high-res image frames into memory (with caching)
   useEffect(() => {
     let isMounted = true;
+    const frameFolder = `/Assets/frames/${productId}`;
+
+    // Serve immediately from in-memory cache if available
+    if (globalFrameCache[productId] && globalFrameCache[productId].length === frameCount) {
+      imagesRef.current = globalFrameCache[productId];
+      setLoadedCount(frameCount);
+      setIsFullyLoaded(true);
+      return;
+    }
+
     const images = [];
     imagesRef.current = [];
     setLoadedCount(0);
     setIsFullyLoaded(false);
 
     let loaded = 0;
-    const frameFolder = `/Assets/frames/${productId}`;
 
     for (let i = 1; i <= frameCount; i++) {
       const img = new Image();
@@ -49,6 +61,7 @@ export default function WebMScroller({
       images.push(img);
     }
 
+    globalFrameCache[productId] = images;
     imagesRef.current = images;
 
     return () => {

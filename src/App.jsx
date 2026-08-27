@@ -9,12 +9,13 @@ import HomeView from './views/HomeView';
 import PDPView from './views/PDPView';
 import { PRODUCTS, CATEGORIES } from './data/products';
 import { soundEngine } from './utils/audio';
+import { loadCartState, saveCartState, loadCurrencyState, saveCurrencyState } from './utils/cookies';
 
 export default function App() {
   const [activeView, setActiveView] = useState('home'); // 'home' or 'pdp'
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => loadCartState());
   
   // Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -24,8 +25,18 @@ export default function App() {
   
   // Settings
   const [soundMuted, setSoundMuted] = useState(false);
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState(() => loadCurrencyState());
   const [cursorText, setCursorText] = useState('');
+
+  // Persist cart to cookie and localStorage
+  useEffect(() => {
+    saveCartState(cartItems);
+  }, [cartItems]);
+
+  // Persist currency to cookie and localStorage
+  useEffect(() => {
+    saveCurrencyState(currency);
+  }, [currency]);
 
   // Handle Cart Operations
   const handleAddToCart = (product, size, color) => {
